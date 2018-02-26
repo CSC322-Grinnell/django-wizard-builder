@@ -44,6 +44,7 @@ class StepsHelper(object):
 
     @property
     def next(self):
+        logger.debug("Using the right django wizard builder!")
         return self.adjust_step(1)
 
     @property

@@ -119,6 +119,7 @@ class StepsHelper(object):
 
     def _goto_step(self, step_type):
         post = self.view.request.POST
+        logging.info("I'm in _goto_step")
         import pdb; pdb.set_trace()
         return post.get(self.wizard_goto_name, None) == step_type
 

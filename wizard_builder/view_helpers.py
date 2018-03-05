@@ -23,6 +23,7 @@ class StepsHelper(object):
 
     def __init__(self, view):
         self.view = view
+        self.step_stack = []
 
     @property
     def step_count(self):
@@ -44,7 +45,6 @@ class StepsHelper(object):
 
     @property
     def next(self):
-        logger.debug("Using the right django wizard builder!")
         return self.adjust_step(1)
 
     @property
@@ -119,6 +119,7 @@ class StepsHelper(object):
 
     def _goto_step(self, step_type):
         post = self.view.request.POST
+        import pdb; pdb.set_trace()
         return post.get(self.wizard_goto_name, None) == step_type
 
 

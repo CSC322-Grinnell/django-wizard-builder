@@ -106,8 +106,10 @@ class StepsHelper(object):
 
     def set_from_post(self):
         if self._goto_step_back:
+            step_stack.pop()
             self.view.curent_step = self.adjust_step(-1)
         if self._goto_step_next:
+            step_stack.append(self.view.current_step)
             self.view.curent_step = self.adjust_step(1)
 
     def adjust_step(self, adjustment):
@@ -119,8 +121,6 @@ class StepsHelper(object):
 
     def _goto_step(self, step_type):
         post = self.view.request.POST
-        logging.info("I'm in _goto_step")
-        import pdb; pdb.set_trace()
         return post.get(self.wizard_goto_name, None) == step_type
 
 

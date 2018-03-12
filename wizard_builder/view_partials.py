@@ -15,12 +15,15 @@ and should not define:
     - url names
 
 '''
+import logging
 from django.contrib.sites.models import Site
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views import generic as views
 
 from . import view_helpers
+
+logger = logging.getLogger(__name__)
 
 
 class WizardRedirectPartial(
@@ -90,7 +93,7 @@ class WizardPartial(
         form.full_clean()
         self.storage.update()
         self.steps.set_from_post()
-        logging.info("Step stack: {}".format(self.steps.step_stack))
+        logger.info("Step stack: {}".format(self.steps.step_stack))
         if self.steps.finished(self.steps.current):
             return self.render_form_done()
         elif self.steps.overflowed(self.steps.current):
@@ -130,3 +133,6 @@ class WizardPartial(
         step = self.kwargs.get('step')
         if step:
             self.curent_step = self.steps.parse_step(step)
+            if (step == 0):
+                # reset the step stack any time we're at 0
+                self.request.session["step_stack"] = []

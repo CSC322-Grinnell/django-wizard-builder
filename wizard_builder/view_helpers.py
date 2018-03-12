@@ -106,10 +106,13 @@ class StepsHelper(object):
 
     def set_from_post(self):
         if self._goto_step_back:
-            step_stack.pop()
+            self.session["step_stack"] = self.session["step_stack"][:-1]
             self.view.curent_step = self.adjust_step(-1)
         if self._goto_step_next:
-            step_stack.append(self.view.current_step)
+            try:
+                self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
+            except KeyError:
+                self.session["step_stack"] = [self.view.curent_step]
             self.view.curent_step = self.adjust_step(1)
 
     def adjust_step(self, adjustment):

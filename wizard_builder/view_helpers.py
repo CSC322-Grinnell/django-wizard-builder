@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from . import managers
 from .data_helper import SerializedDataHelper
+from wizard_builder.models import FormQuestion, Choice, Page
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class StepsHelper(object):
 
     def __init__(self, view):
         self.view = view
-        self.step_stack = []
+        self.session = self.view.request.session
 
     @property
     def step_count(self):
@@ -106,17 +107,20 @@ class StepsHelper(object):
 
     def set_from_post(self):
         if self._goto_step_back:
+            new_step = self.session["step_stack"][-1]
             self.session["step_stack"] = self.session["step_stack"][:-1]
-            self.view.curent_step = self.adjust_step(-1)
+
+            self.view.curent_step = self.adjust_step(new_step)
         if self._goto_step_next:
+            new_step = self.get_next_page_from_answer()
             try:
                 self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
             except KeyError:
                 self.session["step_stack"] = [self.view.curent_step]
-            self.view.curent_step = self.adjust_step(1)
+            self.view.curent_step = self.adjust_step(new_step)
 
-    def adjust_step(self, adjustment):
-        step = self.view.curent_step + adjustment
+    def adjust_step(self, new_step):
+        step = new_step
         if step >= self.step_count:
             return self.done_name
         else:
@@ -125,6 +129,14 @@ class StepsHelper(object):
     def _goto_step(self, step_type):
         post = self.view.request.POST
         return post.get(self.wizard_goto_name, None) == step_type
+
+    def get_next_page_from_answer(self):
+        page = Page.objects.get(position=(self.view.curent_step + 1))
+        question = page.formquestion_set.all()[0]
+        choice_id = self.session["data"]["question_"+str(question.pk)]
+        choice = Choice.objects.get(pk=int(choice_id))
+        next_page = choice.next_page
+        return next_page.position - 1
 
 
 class StorageHelper(object):
@@ -179,7 +191,10 @@ class StorageHelper(object):
         '''
         primary class functionality method, updates the data in storage
         '''
-        self.add_data_to_storage(self.answers_for_current_step)
+        logger.info("HELLO")
+        logger.info("storage_data_key: {}".format(self.storage_data_key))
+        self.session[self.storage_data_key] = self.answers_for_current_step
+        
 
     def current_data_from_storage(self):
         return {
@@ -188,7 +203,9 @@ class StorageHelper(object):
         }
 
     def add_data_to_storage(self, answer_data):
+        # logger.info("storage_data_key: {}".format(self.storage_data_key))
         self.session[self.storage_data_key] = answer_data
+
 
     def init_storage(self):
         self.session.setdefault(

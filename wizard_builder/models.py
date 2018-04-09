@@ -195,6 +195,14 @@ class Choice(models.Model):
     position = models.PositiveSmallIntegerField("Position", default=0)
     extra_info_text = models.TextField(blank=True, null=True)
 
+    next_page = models.ForeignKey(
+        Page,
+        editable=True,
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+    )
+
     @property
     def data(self):
         data = model_to_dict(self)

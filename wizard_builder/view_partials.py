@@ -93,7 +93,6 @@ class WizardPartial(
         form.full_clean()
         self.storage.update()
         self.steps.set_from_post()
-        logger.info(self.request.session.get("step_stack"))
         if self.steps.finished(self.steps.current):
             return self.render_form_done()
         elif self.steps.overflowed(self.steps.current):

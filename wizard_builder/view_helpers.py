@@ -105,14 +105,14 @@ class StepsHelper(object):
     def finished(self, step):
         return self._goto_step_review or step == self.done_name
 
-    def set_from_post(self):
+    def set_from_post(self, answers):
         if self._goto_step_back:
             new_step = self.session["step_stack"][-1]
             self.session["step_stack"] = self.session["step_stack"][:-1]
 
             self.view.curent_step = self.adjust_step(new_step)
         if self._goto_step_next:
-            new_step = self.get_next_page_from_answer()
+            new_step = self.get_next_page_from_answer(answers)
             try:
                 self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
             except KeyError:
@@ -130,13 +130,21 @@ class StepsHelper(object):
         post = self.view.request.POST
         return post.get(self.wizard_goto_name, None) == step_type
 
-    def get_next_page_from_answer(self):
+    def get_next_page_from_answer(self, answers):
         page = Page.objects.get(position=(self.view.curent_step + 1))
         question = page.formquestion_set.all()[0]
-        choice_id = self.session["data"]["question_"+str(question.pk)]
-        choice = Choice.objects.get(pk=int(choice_id))
-        next_page = choice.next_page
-        return next_page.position - 1
+        try:
+            choice_id = answers["question_"+str(question.pk)]
+            choice = Choice.objects.get(pk=int(choice_id))
+            next_page = choice.next_page
+        except KeyError:
+            logger.info("Could not find next page off the choice. Not using branching!")
+            next_page = None
+
+        if next_page:
+            return next_page.position - 1
+        else:
+            return self.view.curent_step + 1
 
 
 class StorageHelper(object):
@@ -191,10 +199,7 @@ class StorageHelper(object):
         '''
         primary class functionality method, updates the data in storage
         '''
-        logger.info("HELLO")
-        logger.info("storage_data_key: {}".format(self.storage_data_key))
-        self.session[self.storage_data_key] = self.answers_for_current_step
-        
+        self.add_data_to_storage(self.answers_for_current_step)
 
     def current_data_from_storage(self):
         return {
@@ -203,7 +208,6 @@ class StorageHelper(object):
         }
 
     def add_data_to_storage(self, answer_data):
-        # logger.info("storage_data_key: {}".format(self.storage_data_key))
         self.session[self.storage_data_key] = answer_data
 
 

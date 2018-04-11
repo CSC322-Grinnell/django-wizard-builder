@@ -92,7 +92,7 @@ class WizardPartial(
     def form_valid(self, form):
         form.full_clean()
         self.storage.update()
-        self.steps.set_from_post()
+        self.steps.set_from_post(self.storage.answers_for_current_step)
         if self.steps.finished(self.steps.current):
             return self.render_form_done()
         elif self.steps.overflowed(self.steps.current):
@@ -130,7 +130,6 @@ class WizardPartial(
     def _dispatch_processing(self):
         super()._dispatch_processing()
         step = self.kwargs.get('step')
-        logger.info("WizardPartial._dispatch_processing step: {}".format(step))
         if step:
             self.curent_step = self.steps.parse_step(step)
             if (step == "0"):

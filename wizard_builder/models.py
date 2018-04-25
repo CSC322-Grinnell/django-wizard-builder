@@ -26,24 +26,37 @@ class Page(
     position = models.PositiveSmallIntegerField("position", default=0)
     section = models.IntegerField(choices=SECTION_CHOICES, default=WHEN)
     sites = models.ManyToManyField(Site)
+    last_page = models.BooleanField()
 
     objects = managers.PageManager()
 
     def __str__(self):
-        questions = self.formquestion_set.order_by('position')
-        if len(questions) > 0 and self.site_names:
-            question_str = "(Question 1: {})".format(questions[0].text)
-            site_str = "(Sites: {})".format(self.site_names)
-            return "{} {} {}".format(self.short_str, question_str, site_str)
-        elif len(questions) > 0:
-            question_str = "(Question 1: {})".format(questions[0].text)
-            return "{} {}".format(self.short_str, question_str)
-        else:
-            return "{}".format(self.short_str)
+        # try:
+            
+        # except ObjectDoesNotExist:
+        #     question_text = ""
+
+        question_text = ": {}".format(self.formquestion.text) if hasattr(self, 'formquestion') else ""
+        site_str = "({})".format(self.site_names) if self.site_names else ""
+
+        return "{}{} {}".format(self.short_str, question_text, site_str)
+            
+        # if len(questions) > 0 and self.site_names:
+        #     question_str = "(Question 1: {})".format(questions[0].text)
+        #     site_str = "(Sites: {})".format(self.site_names)
+        #     return "{} {} {}".format(self.short_str, question_str, site_str)
+        # elif len(questions) > 0:
+        #     question_str = "(Question 1: {})".format(questions[0].text)
+        #     return "{} {}".format(self.short_str, question_str)
+        # else:
+        #     return "{}".format(self.short_str)
 
     @property
     def short_str(self):
-        return "Page {}".format(self.position)
+        if hasattr(self, 'last_page') and self.last_page:
+            return "Last Page"
+        else:
+            return "Page {}".format(self.position)
 
     @property
     def site_names(self):
@@ -51,7 +64,9 @@ class Page(
 
     @property
     def questions(self):
-        return list(self.formquestion_set.order_by('position'))
+
+        return [self.formquestion] if hasattr(self, 'formquestion') else []
+
 
     def save(self, *args, **kwargs):
         self.set_page_position()
@@ -79,13 +94,25 @@ class Page(
 class FormQuestion(models.Model):
     text = models.TextField(blank=True, null=True)
     descriptive_text = models.TextField(blank=True, null=True)
-    page = models.ForeignKey(
+    page = models.OneToOneField(
         Page,
         editable=True,
         null=True,
         blank=False,
         on_delete=models.CASCADE,
     )
+
+    next_page = models.ForeignKey(
+        Page,
+        editable=True,
+        null=True,
+        blank=False,
+        on_delete=models.SET_NULL,
+        related_name="previous_formquestion_set",
+        verbose_name="Default next page",
+        help_text="This is the default next page for this question."
+    )
+
     position = models.PositiveSmallIntegerField("position", default=0)
     type = models.TextField(
         choices=fields.get_field_options(),
@@ -199,8 +226,9 @@ class Choice(models.Model):
         Page,
         editable=True,
         null=True,
-        blank=False,
+        blank=True,
         on_delete=models.SET_NULL,
+        help_text="This overrides the default next page set above."
     )
 
     @property

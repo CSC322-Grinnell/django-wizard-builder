@@ -35,14 +35,14 @@ class StepsHelper(object):
         step = getattr(self.view, 'curent_step', 0)
         if isinstance(step, str):
             return step
-        elif step <= self.last:
+        elif step != self.last:
             return step
         else:
             return self.last
 
     @property
     def last(self):
-        return self.step_count - 1
+        return Page.objects.get(last_page=True).position - 1
 
     @property
     def next(self):
@@ -100,7 +100,7 @@ class StepsHelper(object):
         )
 
     def overflowed(self, step):
-        return int(step) > int(self.last)
+        return int(step) > int(self.step_count) - 1
 
     def finished(self, step):
         return self._goto_step_review or step == self.done_name
@@ -112,19 +112,22 @@ class StepsHelper(object):
 
             self.view.curent_step = self.adjust_step(new_step)
         if self._goto_step_next:
-            new_step = self.get_next_page_from_answer(answers)
-            try:
-                self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
-            except KeyError:
-                self.session["step_stack"] = [self.view.curent_step]
-            self.view.curent_step = self.adjust_step(new_step)
+            if self.view.curent_step == self.last:
+                self.view.curent_step = self.done_name
+            else:
+                new_step = self.get_next_page_from_answer(answers)
+                try:
+                    self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
+                except KeyError:
+                    self.session["step_stack"] = [self.view.curent_step]
+                self.view.curent_step = self.adjust_step(new_step)
 
     def adjust_step(self, new_step):
-        step = new_step
-        if step >= self.step_count:
-            return self.done_name
-        else:
-            return step
+        return new_step
+        #if step == self.last:
+        #    return self.done_name
+        #else:
+        #    return step
 
     def _goto_step(self, step_type):
         post = self.view.request.POST
@@ -132,19 +135,18 @@ class StepsHelper(object):
 
     def get_next_page_from_answer(self, answers):
         page = Page.objects.get(position=(self.view.curent_step + 1))
-        question = page.formquestion_set.all()[0]
-        try:
+        if not hasattr(page, 'formquestion'):
+            return self.last
+
+        question = page.formquestion
+        next_page = question.next_page
+        if question.type == "radiobutton":
             choice_id = answers["question_"+str(question.pk)]
             choice = Choice.objects.get(pk=int(choice_id))
-            next_page = choice.next_page
-        except KeyError:
-            logger.info("Could not find next page off the choice. Not using branching!")
-            next_page = None
+            if choice.next_page is not None:
+               next_page = choice.next_page
 
-        if next_page:
-            return next_page.position - 1
-        else:
-            return self.view.curent_step + 1
+        return next_page.position - 1
 
 
 class StorageHelper(object):

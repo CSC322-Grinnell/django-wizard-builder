@@ -7,7 +7,7 @@ class PageAdmin(admin.ModelAdmin):
     list_filter = ['sites']
     fieldsets = (
         (None, {
-            'fields': ('position', 'section', 'sites')
+            'fields': ('position', 'section', 'sites', 'last_page')
         }),
     )
     inlines = [

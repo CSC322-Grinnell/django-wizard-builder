@@ -33,6 +33,7 @@ class QuestionInline(admin.TabularInline):
     id_cache = None
     type_cache = None
     extra = 0
+    fk_name = "page"
 
     def question_link(self, obj):
         if not self.id_cache:

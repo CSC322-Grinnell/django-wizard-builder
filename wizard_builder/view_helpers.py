@@ -139,10 +139,11 @@ class StepsHelper(object):
 
     def get_next_page_from_answer(self, answers):
         page = Page.objects.get(position=(self.view.curent_step + 1))
-        if not hasattr(page, 'formquestion'):
-            return self.last
+        page.questions
+        #if not hasattr(page, 'formquestion'):
+        #    return self.last
 
-        question = page.formquestion
+        question =  page.questions[0]
         next_page = question.next_page
         if question.type == "radiobutton":
             choice_id = answers["question_"+str(question.pk)]

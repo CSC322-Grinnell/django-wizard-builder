@@ -67,7 +67,7 @@ class Page(
     @property
     def questions(self):
 
-        return [self.formquestion] if hasattr(self, 'formquestion') else []
+        return list(self.formquestion_set.order_by('position'))
 
 
     def save(self, *args, **kwargs):
@@ -96,7 +96,7 @@ class Page(
 class FormQuestion(models.Model):
     text = models.TextField(blank=True, null=True)
     descriptive_text = models.TextField(blank=True, null=True)
-    page = models.OneToOneField(
+    page = models.ForeignKey(
         Page,
         editable=True,
         null=True,

@@ -38,10 +38,13 @@ class Page(
         # except ObjectDoesNotExist:
         #     question_text = ""
 
-        question_text = ": {}".format(self.formquestion.text) if hasattr(self, 'formquestion') else ""
-        site_str = "({})".format(self.site_names) if self.site_names else ""
+        question_text = ": {}".format(self.questions[0].text) if len(self.questions) >= 0 else ""
 
-        return "{}{} {}".format(self.short_str, question_text, site_str)
+        # Uncomment the following line if site name differences becomes confusing
+        # site_str = " ({})".format(self.site_names) if self.site_names else ""
+        site_str = ""
+
+        return "{}{}{}".format(self.short_str, question_text, site_str)
             
         # if len(questions) > 0 and self.site_names:
         #     question_str = "(Question 1: {})".format(questions[0].text)
@@ -122,12 +125,13 @@ class FormQuestion(models.Model):
         default='singlelinetext')
 
     def __str__(self):
-        type_str = "(Type: {})".format(str(type(self).__name__))
+        type_str = " (Type: {})".format(str(type(self).__name__))
+        next_page_str = " (Page {})".format(self.page.position)
         if self.site_names:
-            site_str = "(Sites: {})".format(self.site_names)
-            return "{} {} {}".format(self.short_str, type_str, site_str)
+            site_str = " (Sites: {})".format(self.site_names)
+            return "{}{}{}{}".format(self.short_str, next_page_str, type_str, site_str)
         else:
-            return "{} {}".format(self.short_str, type_str)
+            return "{}{}{}".format(self.short_str, next_page_str, type_str)
 
     @property
     def field_id(self):

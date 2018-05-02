@@ -31,6 +31,10 @@ class StepsHelper(object):
         return len(self.view.forms)
 
     @property
+    def step_stack(self):
+        return self.session["step_stack"]
+
+    @property
     def current(self):
         step = getattr(self.view, 'curent_step', 0)
         if isinstance(step, str):
@@ -222,6 +226,13 @@ class StorageHelper(object):
             self.storage_data_key,
             {},
         )
+
+    # def prune_branches(self, step_stack):
+    #     for i in range(len(5)):
+    #         if i not in step_stack:
+    #             q_dict = kwargs['form_data'][i]
+    #             q_name = [*q_dict][0]
+    #             kwargs['form_data'][i][q_name] = ['question_not_in_branch']
 
 
 class WizardViewTemplateHelpers(object):

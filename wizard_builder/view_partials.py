@@ -20,6 +20,7 @@ from django.contrib.sites.models import Site
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views import generic as views
+from wizard_builder.models import FormQuestion, Page
 
 from . import view_helpers
 
@@ -94,6 +95,7 @@ class WizardPartial(
         self.storage.update()
         self.steps.set_from_post(self.storage.answers_for_current_step)
         if self.steps.finished(self.steps.current):
+            # self.storage.prune_branches(self.steps.step_stack)
             return self.render_form_done()
         elif self.steps.overflowed(self.steps.current):
             return self.render_last()

@@ -1,14 +1,5 @@
-<link rel="stylesheet" src="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.css" />
+{% extends 'template.html' %}
 
-<div class='container'>
-	<div class='row'>
-	<div class='col-lg-offset-2 col-lg-8'><div class='jumbotron' style="margin-top: 10%; padding-top: 5px;">
-    <div class='top'>
-        <a class='close code-icon' href='https://github.com/SexualHealthInnovations/django-wizard-builder' title='source code on github'>
-            <i class='fa fa-code'></i>
-        </a>
-        <h1>Django Wizard BuilderOOOOOOOO</h1>
-    </div>
-    <hr />
-    {% block content %}{% endblock %}
-</div>
+{% block content %}
+    {% block wiz-content %}{% endblock %}
+{% endblock %}

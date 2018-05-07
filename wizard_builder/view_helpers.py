@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from . import managers
 from .data_helper import SerializedDataHelper
+from wizard_builder.models import FormQuestion, Choice, Page
 
 logger = logging.getLogger(__name__)
 
@@ -23,24 +24,29 @@ class StepsHelper(object):
 
     def __init__(self, view):
         self.view = view
+        self.session = self.view.request.session
 
     @property
     def step_count(self):
         return len(self.view.forms)
 
     @property
+    def step_stack(self):
+        return self.session["step_stack"]
+
+    @property
     def current(self):
         step = getattr(self.view, 'curent_step', 0)
         if isinstance(step, str):
             return step
-        elif step <= self.last:
+        elif step != self.last:
             return step
         else:
             return self.last
 
     @property
     def last(self):
-        return self.step_count - 1
+        return Page.objects.get(last_page=True).position - 1
 
     @property
     def next(self):
@@ -98,27 +104,54 @@ class StepsHelper(object):
         )
 
     def overflowed(self, step):
-        return int(step) > int(self.last)
+        return int(step) > int(self.step_count) - 1
 
     def finished(self, step):
         return self._goto_step_review or step == self.done_name
 
-    def set_from_post(self):
+    def set_from_post(self, answers):
         if self._goto_step_back:
-            self.view.curent_step = self.adjust_step(-1)
-        if self._goto_step_next:
-            self.view.curent_step = self.adjust_step(1)
+            new_step = self.session["step_stack"][-1]
+            self.session["step_stack"] = self.session["step_stack"][:-1]
 
-    def adjust_step(self, adjustment):
-        step = self.view.curent_step + adjustment
-        if step >= self.step_count:
-            return self.done_name
-        else:
-            return step
+            self.view.curent_step = self.adjust_step(new_step)
+        if self._goto_step_next:
+            if self.view.curent_step == self.last:
+                self.view.curent_step = self.done_name
+            else:
+                new_step = self.get_next_page_from_answer(answers)
+                try:
+                    self.session["step_stack"] = self.session["step_stack"] + [self.view.curent_step]
+                except KeyError:
+                    self.session["step_stack"] = [self.view.curent_step]
+                self.view.curent_step = self.adjust_step(new_step)
+
+    def adjust_step(self, new_step):
+        return new_step
+        #if step == self.last:
+        #    return self.done_name
+        #else:
+        #    return step
 
     def _goto_step(self, step_type):
         post = self.view.request.POST
         return post.get(self.wizard_goto_name, None) == step_type
+
+    def get_next_page_from_answer(self, answers):
+        page = Page.objects.get(position=(self.view.curent_step + 1))
+        page.questions
+        #if not hasattr(page, 'formquestion'):
+        #    return self.last
+
+        question =  page.questions[0]
+        next_page = question.next_page
+        if question.type == "radiobutton":
+            choice_id = answers["question_"+str(question.pk)]
+            choice = Choice.objects.get(pk=int(choice_id))
+            if choice.next_page is not None:
+               next_page = choice.next_page
+
+        return next_page.position - 1
 
 
 class StorageHelper(object):
@@ -184,6 +217,7 @@ class StorageHelper(object):
     def add_data_to_storage(self, answer_data):
         self.session[self.storage_data_key] = answer_data
 
+
     def init_storage(self):
         self.session.setdefault(
             self.storage_form_key,
@@ -193,6 +227,13 @@ class StorageHelper(object):
             self.storage_data_key,
             {},
         )
+
+    # def prune_branches(self, step_stack):
+    #     for i in range(len(5)):
+    #         if i not in step_stack:
+    #             q_dict = kwargs['form_data'][i]
+    #             q_name = [*q_dict][0]
+    #             kwargs['form_data'][i][q_name] = ['question_not_in_branch']
 
 
 class WizardViewTemplateHelpers(object):

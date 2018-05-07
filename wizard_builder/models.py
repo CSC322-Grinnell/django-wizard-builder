@@ -38,7 +38,7 @@ class Page(
         # except ObjectDoesNotExist:
         #     question_text = ""
 
-        question_text = ": {}".format(self.questions[0].text) if len(self.questions) >= 0 else ""
+        question_text = ": {}".format(self.questions[0].text) if len(self.questions) > 0 else ""
 
         # Uncomment the following line if site name differences becomes confusing
         # site_str = " ({})".format(self.site_names) if self.site_names else ""
@@ -126,12 +126,12 @@ class FormQuestion(models.Model):
 
     def __str__(self):
         type_str = " (Type: {})".format(str(type(self).__name__))
-        next_page_str = " (Page {})".format(self.page.position)
+        next_page_str = "(Page {})".format(self.page.position)
         if self.site_names:
             site_str = " (Sites: {})".format(self.site_names)
-            return "{}{}{}{}".format(self.short_str, next_page_str, type_str, site_str)
+            return "{}{}{}{}".format(next_page_str, " "+self.short_str, type_str, site_str)
         else:
-            return "{}{}{}".format(self.short_str, next_page_str, type_str)
+            return "{}{}{}".format(next_page_str, " "+self.short_str, type_str)
 
     @property
     def field_id(self):

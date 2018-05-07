@@ -145,12 +145,15 @@ class StepsHelper(object):
 
         question =  page.questions[0]
         next_page = question.next_page
-        if question.type == "radiobutton":
-            choice_id = answers["question_"+str(question.pk)]
-            if choice_id is not None:
-                choice = Choice.objects.get(pk=int(choice_id))
-                if choice.next_page is not None:
-                   next_page = choice.next_page
+        try:
+            if question.type == "radiobutton":
+                choice_id = answers["question_"+str(question.pk)]
+                if choice_id is not None:
+                    choice = Choice.objects.get(pk=int(choice_id))
+                    if choice.next_page is not None:
+                       next_page = choice.next_page
+        except:
+            logger.info("Ran into error selecting next page from question choice")
 
         return next_page.position - 1
 

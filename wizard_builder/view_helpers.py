@@ -147,9 +147,10 @@ class StepsHelper(object):
         next_page = question.next_page
         if question.type == "radiobutton":
             choice_id = answers["question_"+str(question.pk)]
-            choice = Choice.objects.get(pk=int(choice_id))
-            if choice.next_page is not None:
-               next_page = choice.next_page
+            if choice_id is not None:
+                choice = Choice.objects.get(pk=int(choice_id))
+                if choice.next_page is not None:
+                   next_page = choice.next_page
 
         return next_page.position - 1
 
